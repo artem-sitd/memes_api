@@ -1,2 +1,3 @@
 # memes_api
-Fastapi, S3, sqlalchemy, postgresql, 
+
+IN PROGRES...
