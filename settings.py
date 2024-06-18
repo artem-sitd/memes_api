@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from typing import ClassVar
-
+from media_api.s3connect import S3Client
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
@@ -10,7 +10,7 @@ env_file = Path(__file__).parent / ".env.docker" if os.getenv("USE_DOCKER") else
 
 
 class DatabaseEnv(BaseSettings):
-    model_config = SettingsConfigDict(env_file=env_file, env_file_encoding='utf-8')
+    model_config = SettingsConfigDict(extra="ignore", env_file=env_file, env_file_encoding='utf-8')
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_HOST: str
@@ -30,8 +30,17 @@ class DatabaseConnect(BaseSettings):
             yield session
 
 
-class Settings(BaseSettings):
-    pass
+class S3clientSetting(BaseSettings):
+    model_config = SettingsConfigDict(extra="ignore", env_file=env_file, env_file_encoding='utf-8')
+    access_key: str
+    secret_key: str
+    endpoint_url: str
+    bucket_name: str
 
 
+s3_env = S3clientSetting()
+s3_client = S3Client(access_key=s3_env.access_key,
+                     secret_key=s3_env.secret_key,
+                     endpoint_url=s3_env.endpoint_url,
+                     bucket_name=s3_env.bucket_name)
 db_settings = DatabaseConnect()

@@ -1,8 +1,11 @@
-import asyncio
 from contextlib import asynccontextmanager
 
 from aiobotocore.session import get_session
 from botocore.exceptions import ClientError
+
+
+class BucketNotSpecifiedError(Exception):
+    pass
 
 
 class S3Client:
@@ -11,7 +14,7 @@ class S3Client:
             access_key: str,
             secret_key: str,
             endpoint_url: str,
-            bucket_name: str,
+            bucket_name: str = None,
     ):
         self.config = {
             "aws_access_key_id": access_key,
@@ -26,10 +29,23 @@ class S3Client:
         async with self.session.create_client("s3", **self.config) as client:
             yield client
 
+    # создать бакет
+    async def create_bucket(self, bucket_name):
+        try:
+            async with self.get_client() as client:
+                await client.create_bucket(Bucket=bucket_name)
+                self.bucket_name = bucket_name
+                print(f"Bucket {bucket_name} created")
+        except ClientError as e:
+            print(f"Error creating bucket: {e}")
+
+    # загрузить файл в S3
     async def upload_file(
             self,
             file_path: str,
     ):
+        if not self.bucket_name:
+            raise BucketNotSpecifiedError("Bucket is not exists")
         object_name = file_path.split("/")[-1]  # /users/artem/cat.jpg
         try:
             async with self.get_client() as client:
@@ -43,7 +59,10 @@ class S3Client:
         except ClientError as e:
             print(f"Error uploading file: {e}")
 
+    # удалить файл
     async def delete_file(self, object_name: str):
+        if not self.bucket_name:
+            raise BucketNotSpecifiedError("Bucket is not exists")
         try:
             async with self.get_client() as client:
                 await client.delete_object(Bucket=self.bucket_name, Key=object_name)
@@ -51,7 +70,10 @@ class S3Client:
         except ClientError as e:
             print(f"Error deleting file: {e}")
 
+    # получить файл
     async def get_file(self, object_name: str, destination_path: str):
+        if not self.bucket_name:
+            raise BucketNotSpecifiedError("Bucket is not exists")
         try:
             async with self.get_client() as client:
                 response = await client.get_object(Bucket=self.bucket_name, Key=object_name)
@@ -61,21 +83,3 @@ class S3Client:
                 print(f"File {object_name} downloaded to {destination_path}")
         except ClientError as e:
             print(f"Error downloading file: {e}")
-
-
-async def main():
-    s3_client = S3Client(
-        access_key="",
-        secret_key="",
-        endpoint_url="",  # для Selectel используйте https://s3.storage.selcloud.ru
-        bucket_name="",
-    )
-
-    # Проверка, что мы можем загрузить, скачать и удалить файл
-    # await s3_client.upload_file("test.txt")
-    # await s3_client.get_file("test.txt", "text_local_file.txt")
-    # await s3_client.delete_file("test.txt")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
