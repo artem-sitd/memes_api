@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import ClassVar
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
@@ -17,11 +18,12 @@ class DatabaseEnv(BaseSettings):
 
 
 class DatabaseConnect(BaseSettings):
-    db_env = DatabaseEnv()
-    db_url = f"postgresql+asyncpg://{db_env.POSTGRES_USER}:{db_env.POSTGRES_PASSWORD}@{db_env.POSTGRES_HOST}/{db_env.POSTGRES_DB}"
+    db_env: ClassVar[DatabaseEnv] = DatabaseEnv()
+    db_url: ClassVar[
+        str] = f"postgresql+asyncpg://{db_env.POSTGRES_USER}:{db_env.POSTGRES_PASSWORD}@{db_env.POSTGRES_HOST}/{db_env.POSTGRES_DB}"
 
-    engine = create_async_engine(db_url, echo=True)
-    async_session = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+    engine: ClassVar = create_async_engine(db_url, echo=True)
+    async_session: ClassVar = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
     async def get_session(self) -> AsyncSession:
         async with self.async_session() as session:

@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import declarative_base
 
-Base = DeclarativeBase()
+Base = declarative_base()
 
 
 class Memes(Base):
