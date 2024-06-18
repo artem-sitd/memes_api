@@ -35,12 +35,13 @@ class S3clientSetting(BaseSettings):
     access_key: str
     secret_key: str
     endpoint_url: str
-    bucket_name: str
+    bucket_name: str = None
 
 
 s3_env = S3clientSetting()
 s3_client = S3Client(access_key=s3_env.access_key,
                      secret_key=s3_env.secret_key,
                      endpoint_url=s3_env.endpoint_url,
-                     bucket_name=s3_env.bucket_name)
+                     bucket_name=s3_env.bucket_name
+                     )
 db_settings = DatabaseConnect()

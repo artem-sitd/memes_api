@@ -1,10 +1,15 @@
 from contextlib import asynccontextmanager
+from fastapi import UploadFile
 
 from aiobotocore.session import get_session
 from botocore.exceptions import ClientError
 
 
 class BucketNotSpecifiedError(Exception):
+    pass
+
+
+class BucketAlreadyExistsError(Exception):
     pass
 
 
@@ -35,29 +40,28 @@ class S3Client:
             async with self.get_client() as client:
                 await client.create_bucket(Bucket=bucket_name)
                 self.bucket_name = bucket_name
-                print(f"Bucket {bucket_name} created")
         except ClientError as e:
-            print(f"Error creating bucket: {e}")
+            raise ClientError
 
     # загрузить файл в S3
     async def upload_file(
             self,
-            file_path: str,
+            file: UploadFile,
     ):
         if not self.bucket_name:
             raise BucketNotSpecifiedError("Bucket is not exists")
-        object_name = file_path.split("/")[-1]  # /users/artem/cat.jpg
+        object_name = file.filename
         try:
             async with self.get_client() as client:
-                with open(file_path, "rb") as file:
-                    await client.put_object(
-                        Bucket=self.bucket_name,
-                        Key=object_name,
-                        Body=file,
-                    )
-                print(f"File {object_name} uploaded to {self.bucket_name}")
+                file_content = await file.read()
+                await client.put_object(
+                    Bucket=self.bucket_name,
+                    Key=object_name,
+                    Body=file_content,
+                )
+                return f"{self.config['endpoint_url']}/{self.bucket_name}/{object_name}"
         except ClientError as e:
-            print(f"Error uploading file: {e}")
+            raise ClientError
 
     # удалить файл
     async def delete_file(self, object_name: str):
@@ -66,9 +70,9 @@ class S3Client:
         try:
             async with self.get_client() as client:
                 await client.delete_object(Bucket=self.bucket_name, Key=object_name)
-                print(f"File {object_name} deleted from {self.bucket_name}")
+
         except ClientError as e:
-            print(f"Error deleting file: {e}")
+            raise ClientError
 
     # получить файл
     async def get_file(self, object_name: str, destination_path: str):
@@ -80,6 +84,5 @@ class S3Client:
                 data = await response["Body"].read()
                 with open(destination_path, "wb") as file:
                     file.write(data)
-                print(f"File {object_name} downloaded to {destination_path}")
         except ClientError as e:
-            print(f"Error downloading file: {e}")
+            raise ClientError
