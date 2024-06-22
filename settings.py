@@ -22,7 +22,7 @@ class DatabaseConnect(BaseSettings):
     db_url: ClassVar[
         str] = f"postgresql+asyncpg://{db_env.POSTGRES_USER}:{db_env.POSTGRES_PASSWORD}@{db_env.POSTGRES_HOST}/{db_env.POSTGRES_DB}"
 
-    engine: ClassVar = create_async_engine(db_url, echo=True)
+    engine: ClassVar = create_async_engine(db_url)
     async_session: ClassVar = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
     async def get_session(self) -> AsyncSession:

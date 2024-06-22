@@ -1,19 +1,18 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import requests
 from pathlib import Path
-import os
 
-env_file = Path(__file__).parent / ".env.docker" if os.getenv("USE_DOCKER") else Path(
-    __file__).parent / ".env"
+file_to_send = Path(__file__).parent / "tests" / "index.png"
 
-
-class S3clientSetting(BaseSettings):
-    model_config = SettingsConfigDict(extra="ignore", env_file=env_file, env_file_encoding='utf-8')
-    access_key: str
-    secret_key: str
-    endpoint_url: str
-    bucket_name: str
+url = "http://localhost:8000/post_memes"
 
 
-s3_env = S3clientSetting()
+def post_memes():
+    response = requests.post(url, files={"file": open(file_to_send, 'rb')})
+    response = response.json()
+    print(response)
+    # print(response['description'])
+    # print(response['src'])
+    # print(response['id'])
 
-print(s3_env)
+
+post_memes()
