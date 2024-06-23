@@ -1,7 +1,8 @@
 from fastapi import APIRouter, UploadFile, HTTPException, status, Depends
 
-from media_api.s3connect import BucketNotSpecifiedError, BucketAlreadyExistsError
-from settings import db_settings, s3_client
+from media_api.s3connect import BucketNotSpecifiedError, BucketAlreadyExistsError, S3Client
+
+from settings import db_settings, s3_client, get_s3_client
 from .models import Memes
 from .schemas import PostMemesSchema, BucketSchema
 from sqlalchemy.exc import SQLAlchemyError
@@ -15,12 +16,13 @@ router = APIRouter()
 
 # удаление файла из S3 и postgres
 @router.delete("/delete_memes/{id}")
-async def delete_memes_id(id: int, session: AsyncSession = Depends(db_settings.get_session)):
+async def delete_memes_id(id: int, session: AsyncSession = Depends(db_settings.get_session),
+                          s3: S3Client = Depends(get_s3_client)):
     target_memes = await session.get(Memes, id)
     if not target_memes:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meme not found")
     try:
-        await s3_client.delete_file(target_memes.description)
+        await s3.delete_file(target_memes.description)
         await session.delete(target_memes)
         await session.commit()
         return {"message": f"Meme id: {id} deleted"}
@@ -41,8 +43,10 @@ async def delete_memes_id(id: int, session: AsyncSession = Depends(db_settings.g
                             detail=f"Internal server error: {str(e)}")
 
 
-@router.put("/put_memes/{id}")
-async def put_memes_id(id: int, file: UploadFile, session: AsyncSession = Depends(db_settings.get_session)):
+@router.put("/put_memes/{id}", response_model=PostMemesSchema)
+async def put_memes_id(id: int, file: UploadFile,
+                       session: AsyncSession = Depends(db_settings.get_session),
+                       s3: S3Client = Depends(get_s3_client)):
     try:
         filename = file.filename
     except Exception as e:
@@ -53,12 +57,12 @@ async def put_memes_id(id: int, file: UploadFile, session: AsyncSession = Depend
         if not target_memes:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meme not found")
 
-        await s3_client.delete_file(target_memes.description)
+        await s3.delete_file(target_memes.description)
         file_url = await s3_client.upload_file(file)
         target_memes.src = file_url
         target_memes.description = filename
         await session.commit()
-        return target_memes
+        return PostMemesSchema.from_orm(target_memes)
     except BucketNotSpecifiedError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -71,19 +75,20 @@ async def put_memes_id(id: int, file: UploadFile, session: AsyncSession = Depend
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Internal server error")
 
 
-@router.get("/get_memes/{id}")
+@router.get("/get_memes/{id}", response_model=PostMemesSchema)
 async def get_memes_id(id: int, session: AsyncSession = Depends(db_settings.get_session)):
     try:
         target_memes = await session.get(Memes, id)
         if not target_memes:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meme not found")
-        return target_memes
+        return PostMemesSchema.from_orm(target_memes)
     except BucketNotSpecifiedError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/get_memes")
-async def get_all_memes(page: int = 1, page_size: int = 10, session: AsyncSession = Depends(db_settings.get_session)):
+async def get_all_memes(page: int = 1, page_size: int = 10,
+                        session: AsyncSession = Depends(db_settings.get_session)):
     try:
         offset = (page - 1) * page_size
         query = select(Memes).order_by(Memes.id).offset(offset).limit(page_size)
@@ -99,24 +104,22 @@ async def get_all_memes(page: int = 1, page_size: int = 10, session: AsyncSessio
 
 # отправка файла в S3 и postgresql
 @router.post("/post_memes", response_model=PostMemesSchema)
-async def create_memes(file: UploadFile, session: AsyncSession = Depends(db_settings.get_session)) -> PostMemesSchema:
+async def create_memes(file: UploadFile,
+                       session: AsyncSession = Depends(db_settings.get_session),
+                       s3: S3Client = Depends(get_s3_client)) -> PostMemesSchema:
     try:
         filename = file.filename
     except Exception as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="ошибка при загрузке файла")
 
     try:
-        file_url = await s3_client.upload_file(file)
+        file_url = await s3.upload_file(file)
         new_meme = Memes(src=file_url, description=filename)
         session.add(new_meme)
         await session.commit()
 
-        # если указать через распакову ** тогда тесты не проходят
-        return PostMemesSchema(
-            id=new_meme.id,
-            src=new_meme.src,
-            description=new_meme.description
-        )
+        return PostMemesSchema.from_orm(new_meme)
+
 
     except BucketNotSpecifiedError as e:
         raise HTTPException(status_code=400, detail=str(e))

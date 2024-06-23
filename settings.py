@@ -23,7 +23,8 @@ class DatabaseConnect(BaseSettings):
         str] = f"postgresql+asyncpg://{db_env.POSTGRES_USER}:{db_env.POSTGRES_PASSWORD}@{db_env.POSTGRES_HOST}/{db_env.POSTGRES_DB}"
 
     engine: ClassVar = create_async_engine(db_url)
-    async_session: ClassVar = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+    async_session: ClassVar = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False
+                                                 )
 
     async def get_session(self) -> AsyncSession:
         async with self.async_session() as session:
@@ -44,4 +45,7 @@ s3_client = S3Client(access_key=s3_env.access_key,
                      endpoint_url=s3_env.endpoint_url,
                      bucket_name=s3_env.bucket_name
                      )
+async def get_s3_client():
+    return s3_client
+
 db_settings = DatabaseConnect()

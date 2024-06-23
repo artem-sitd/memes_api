@@ -1,18 +1,12 @@
-import requests
-from pathlib import Path
-
-file_to_send = Path(__file__).parent / "tests" / "index.png"
-
-url = "http://localhost:8000/post_memes"
-
-
-def post_memes():
-    response = requests.post(url, files={"file": open(file_to_send, 'rb')})
-    response = response.json()
-    print(response)
-    # print(response['description'])
-    # print(response['src'])
-    # print(response['id'])
-
-
-post_memes()
+json_response = {"memes": [
+    {
+        "description": "poetry.jpeg",
+        "id": 0
+    },
+    {
+        "description": "index.png",
+        "id": 1
+    }]
+}
+print(json_response["memes"][0]["description"] in ("index.png", "poetry.jpeg"))
+print(not json_response["memes"][2]["description"] in ("index.png", "poetry.jpeg"))
