@@ -1,6 +1,6 @@
-import pytest
-
 from pathlib import Path
+
+import pytest
 
 file_to_post = Path(__file__).parent / "index.png"
 file_to_put = Path(__file__).parent / "nginx.png"
@@ -10,8 +10,9 @@ file_to_post2 = Path(__file__).parent / "poetry.jpeg"
 @pytest.mark.asyncio(scope="session")
 async def test_post_and_put_meme(client):
     # post
-    response = await client.post("/post_memes",
-                                 files={"file": open(file_to_post, 'rb')})
+    response = await client.post(
+        "/post_memes", files={"file": open(file_to_post, "rb")}
+    )
     assert response.status_code == 200
     json_response = response.json()
     assert "id" in json_response
@@ -20,8 +21,9 @@ async def test_post_and_put_meme(client):
     post_id_memes = json_response.get("id")
 
     # put
-    response = await client.put(f"/put_memes/{post_id_memes}",
-                                files={"file": open(file_to_put, 'rb')})
+    response = await client.put(
+        f"/put_memes/{post_id_memes}", files={"file": open(file_to_put, "rb")}
+    )
     assert response.status_code == 200
     json_response = response.json()
     assert "id" in json_response
@@ -39,8 +41,9 @@ async def test_post_and_put_meme(client):
 @pytest.mark.asyncio(scope="session")
 async def test_post_and_get(client):
     # post
-    response = await client.post("/post_memes",
-                                 files={"file": open(file_to_post2, 'rb')})
+    response = await client.post(
+        "/post_memes", files={"file": open(file_to_post2, "rb")}
+    )
     assert response.status_code == 200
     json_response = response.json()
     assert "id" in json_response
@@ -57,8 +60,9 @@ async def test_post_and_get(client):
     assert json_response2["description"] == "poetry.jpeg"
 
     # post
-    response = await client.post("/post_memes",
-                                 files={"file": open(file_to_post, 'rb')})
+    response = await client.post(
+        "/post_memes", files={"file": open(file_to_post, "rb")}
+    )
     assert response.status_code == 200
     json_response = response.json()
     assert "id" in json_response

@@ -1,8 +1,8 @@
 from contextlib import asynccontextmanager
-from fastapi import UploadFile
 
 from aiobotocore.session import get_session
 from botocore.exceptions import ClientError
+from fastapi import UploadFile
 
 
 class BucketNotSpecifiedError(Exception):
@@ -15,11 +15,11 @@ class BucketAlreadyExistsError(Exception):
 
 class S3Client:
     def __init__(
-            self,
-            access_key: str,
-            secret_key: str,
-            endpoint_url: str,
-            bucket_name: str = None,
+        self,
+        access_key: str,
+        secret_key: str,
+        endpoint_url: str,
+        bucket_name: str = None,
     ):
         self.config = {
             "aws_access_key_id": access_key,
@@ -45,8 +45,8 @@ class S3Client:
 
     # загрузить файл в S3
     async def upload_file(
-            self,
-            file: UploadFile,
+        self,
+        file: UploadFile,
     ):
         if not self.bucket_name:
             raise BucketNotSpecifiedError("Bucket is not exists")
@@ -80,7 +80,9 @@ class S3Client:
             raise BucketNotSpecifiedError("Bucket is not exists")
         try:
             async with self.get_client() as client:
-                response = await client.get_object(Bucket=self.bucket_name, Key=object_name)
+                response = await client.get_object(
+                    Bucket=self.bucket_name, Key=object_name
+                )
                 data = await response["Body"].read()
                 with open(destination_path, "wb") as file:
                     file.write(data)

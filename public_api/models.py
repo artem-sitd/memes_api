@@ -12,5 +12,5 @@ class Memes(Base):
     description = Column(String(200), nullable=True, unique=True)
 
     __table_args__ = (
-        UniqueConstraint('src', 'description', name='_src_description_uc'),
+        UniqueConstraint("src", "description", name="_src_description_uc"),
     )

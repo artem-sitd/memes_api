@@ -1,13 +1,14 @@
 import os
-import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
-from media_api.s3connect import S3Client
-from settings import db_settings, get_s3_client
-from main import app
-from public_api.models import Base
+import pytest_asyncio
 from dotenv import load_dotenv
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from main import app
+from media_api.s3connect import S3Client
+from public_api.models import Base
+from settings import db_settings, get_s3_client
 
 load_dotenv()
 
@@ -25,8 +26,13 @@ TEST_S3_BUCKET_NAME = os.getenv("test_bucket_name")
 
 # Настройка базы данных
 test_engine = create_async_engine(TEST_DATABASE_URL)
-TestSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=test_engine,
-                                      class_=AsyncSession, expire_on_commit=False)
+TestSessionLocal = async_sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=test_engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+)
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -70,16 +76,15 @@ async def s3_client_test():
         access_key=TEST_S3_ACCESS_KEY,
         secret_key=TEST_S3_SECRET_KEY,
         endpoint_url=TEST_S3_ENDPOINT_URL,
-        bucket_name=TEST_S3_BUCKET_NAME
+        bucket_name=TEST_S3_BUCKET_NAME,
     )
     yield s3
 
     # удаляем все после себя из тестового бакета
     async with s3.get_client() as client:
         response = await client.list_objects_v2(Bucket=TEST_S3_BUCKET_NAME)
-        if 'Contents' in response:
-            objects_to_delete = [{'Key': obj['Key']} for obj in response['Contents']]
+        if "Contents" in response:
+            objects_to_delete = [{"Key": obj["Key"]} for obj in response["Contents"]]
             await client.delete_objects(
-                Bucket=TEST_S3_BUCKET_NAME,
-                Delete={'Objects': objects_to_delete}
+                Bucket=TEST_S3_BUCKET_NAME, Delete={"Objects": objects_to_delete}
             )
