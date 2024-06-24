@@ -1,11 +1,31 @@
 # memes_api
+> Проект выполнен в рамках тестового задания, требования указаны в `ТЗ.md`
 
-IN PROGRES...
+### Установка:
 
-docker run -p 9000:9000 -p 9001:9001 -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin
-docker.io/minio/minio server /home/art/minio_data --console-address ":9001"
+1. Клонирование репозитория
+> git clone https://github.com/artem-sitd/memes_api.git
 
-Необходимо проработать механизм создания бакета
-я думаю, сначала в .env указываем имя будущего бакета, далее собираем все контйнеры, и перейдя в консоль бакета создать
-такой же бакет
-docker run -p 9000:9000 -p 9001:9001 -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin docker.io/minio/minio server /home/art/minio_data --console-address ":9001"
+1.1 Редактирование переменных окружения:
+необходимо переименовать файл `.env.docker.template` в `.env.docker` (**можете его не редактировать, но вот пояснения для каждой переменной**)
+> `POSTGRES_USER`- имя пользователя базы postgres, которую создаст докер контейнер \
+`POSTGRES_PASSWORD` - пароль пользователя базы postgres, которую создаст докер контейнер \
+`POSTGRES_HOST` - название контейнера postgres\
+`POSTGRES_DB` - название базы, которую создаст контейнер postgres\
+`test_db` - название тестовой базы, используется в pytest, вне контейнера\
+`MINIO_ROOT_USER` - имя пользователя, создает контейнер с клиентом S3 minio\
+`MINIO_ROOT_PASSWORD` - пароль для пользователя, создает контейнер с клиентом S3 minio\
+`access_key` - ключ для S3 minio, указываем просто как minio\
+`secret_key` - секретный ключ для S3 minio, указываем просто как minio\
+`endpoint_url` - путь до контейнера с S3 minio\
+`bucket_name` - можете указать другой либо оставить, но в п.3 необходимо создать с таким же именем\
+`test_bucket_name` - название бакета при тестах в pytest, логика такая же как и в п.3\
+
+2. Сборка и запуск докер контейнеров
+> docker-compose up --build
+
+3. После сборки и запуска всех контейнеров - необходимо создать бакет в S3 minio, 
+для этого - переходим по адресу: `http://localhost:9001/buckets`, справа будет кнопка "Create Backet", 
+даем название бакету - которая указана в вашем `.env.docker` в переменной `bucket_name`
+
+4. Можно пользоваться приложением. Документация API находится по адресу `localhost:8000/docs`

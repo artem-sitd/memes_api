@@ -8,7 +8,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: "/Dockerfile"
+      dockerfile: "./Dockerfile"
     container_name: "memes_app"
     env_file:
       - ".env.docker"
@@ -28,7 +28,6 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-postgres-tables.sh:/docker-entrypoint-initdb.d/init-postgres-tables.sh
 
   minio:
     container_name: "s3_minio"

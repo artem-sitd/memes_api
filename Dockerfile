@@ -7,10 +7,10 @@ WORKDIR /memes_app
 
 COPY requirements.txt requirements.txt
 
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 ENV USE_DOCKER=1
 
 COPY . .
 
-CMD ["python3", "main.py"]
+CMD ["sh", "-c", "sleep 10 && alembic upgrade head && python3 main.py"]
